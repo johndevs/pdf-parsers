@@ -1,0 +1,16 @@
+group 'com.devsoap.parsers'
+version '1.0'
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'application'
+    sourceCompatibility = JavaVersion.VERSION_16
+    targetCompatibility = JavaVersion.VERSION_16
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        implementation 'com.itextpdf:itext7-core:7.1.15'
+    }
+}
+
