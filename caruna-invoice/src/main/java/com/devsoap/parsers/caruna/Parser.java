@@ -25,10 +25,10 @@ import java.util.regex.Pattern;
 public class Parser {
 
     private static final Pattern DATE_RANGE_PATTERN = Pattern.compile("(\\d\\d?\\.\\d\\d?\\.\\d\\d\\d\\d) - (\\d\\d?\\.\\d\\d?\\.\\d\\d\\d\\d)");
-    private static final Pattern PERUSMAKSU_PATTERN = Pattern.compile("Perusmaksu.* (\\d*,\\d\\d) EUR");
-    private static final Pattern P_SIIRTO_PATTERN = Pattern.compile("Päiväsiirto.* (\\d*,\\d\\d) snt.* (\\d*,\\d\\d) EUR");
-    private static final Pattern O_SIIRTO_PATTERN = Pattern.compile("Yösiirto.* (\\d*,\\d\\d) snt.* (\\d*,\\d\\d) EUR");
-    private static final Pattern TAX_PATTERN = Pattern.compile("Sähkövero.* (\\d*,\\d\\d) EUR");
+    private static final Pattern PERUSMAKSU_PATTERN = Pattern.compile("Perusmaksu.* (\\d*,\\d\\d) (EUR|€)");
+    private static final Pattern P_SIIRTO_PATTERN = Pattern.compile("Päiväsiirto.* (\\d*,\\d\\d) snt.* (\\d*,\\d\\d) (EUR|€)");
+    private static final Pattern O_SIIRTO_PATTERN = Pattern.compile("Yösiirto.* (\\d*,\\d\\d) snt.* (\\d*,\\d\\d) (EUR|€)");
+    private static final Pattern TAX_PATTERN = Pattern.compile("Sähkövero.* (\\d*,\\d\\d) (EUR|€)");
 
     private static final Locale FI_LOCALE = new Locale("FI", "fi");
     private static final DateTimeFormatter FI_DATE = DateTimeFormatter
