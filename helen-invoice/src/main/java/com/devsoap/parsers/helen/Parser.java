@@ -6,17 +6,15 @@ import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.format.TextStyle;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Scanner;
-import java.util.function.Function;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Parser {
 
@@ -31,46 +29,44 @@ public class Parser {
             .ofLocalizedDate(FormatStyle.SHORT)
             .withLocale(FI_LOCALE);
 
-
-
-    static class Period {
-        double basicPay = 0.0;
-        int dayEnergy = 0;
-        int nightEnergy = 0;
-        double dayEnergyEur = 0.0;
-        double nightEnergyEur = 0.0;
-
-        @Override
-        public String toString() {
-            return "Period{" +
-                    "basicPay=" + basicPay +
-                    ", dayEnergy=" + dayEnergy +
-                    ", nightEnergy=" + nightEnergy +
-                    ", dayEnergyEur=" + dayEnergyEur +
-                    ", nightEnergyEur=" + nightEnergyEur +
-                    '}';
-        }
+    public static class Period {
+        public double basicPay = 0.0;
+        public int dayEnergy = 0;
+        public int nightEnergy = 0;
+        public double dayEnergyEur = 0.0;
+        public double nightEnergyEur = 0.0;
     }
 
     public static void main(String[] args) {
-        var filename = args[0];
-        var daySiirtoKwh = 937;
-        var nightSiirtoKwh = 920;
+        var filename = Path.of(args[0]);
+        var daySiirtoKwh = Arrays
+                .stream(args[1].split(","))
+                .map(period -> period.split(":"))
+                .collect(Collectors.toMap(values -> values[0], values -> Integer.parseInt(values[1])));
+        var nightSiirtoKwh = Arrays
+                .stream(args[2].split(","))
+                .map(period -> period.split(":"))
+                .collect(Collectors.toMap(values -> values[0], values -> Integer.parseInt(values[1])));
 
-        var file = Paths.get(filename);
+        System.out.println("Kuukausi,Perusmaksu (energia),Perusmaksu (siirto),Päiväenergia (kWh),Päiväenergia " +
+                "(EUR),Yöenergia (kWh),Yöenergia (EUR),Päiväsiirto (kWh),Päiväsiirto (EUR),Yösiirto (kWh)" +
+                ",Yösiirto (EUR),Vero");
+
+        parse(filename,daySiirtoKwh, nightSiirtoKwh).forEach((month,period ) -> {
+            var csv = String.format("%s,%.02f,,%d,%.02f,%d,%.02f,,,,", month,
+                    period.dayEnergy, period.dayEnergyEur,period.nightEnergy, period.nightEnergyEur);
+            System.out.println(csv);
+        });
+    }
+
+    public static Map<String, Period> parse(Path file, Map<String, Integer> daySiirtoKwh,
+                                            Map<String, Integer> nightSiirtoKwh) {
         try(var reader = new PdfReader(file.toFile())) {
             var document = new PdfDocument(reader);
             var page2 = document.getPage(2);
             var text = PdfTextExtractor.getTextFromPage(page2);
-
             var scanner = new Scanner(text);
-
-            System.out.println("Kuukausi,Perusmaksu (energia),Perusmaksu (siirto),Päiväenergia (kWh),Päiväenergia " +
-                    "(EUR),Yöenergia (kWh),Yöenergia (EUR),Päiväsiirto (kWh),Päiväsiirto (EUR),Yösiirto (kWh)" +
-                    ",Yösiirto (EUR),Vero");
-
             var periods = new HashMap<String, Period>();
-
             while(scanner.hasNextLine()) {
                 var line = scanner.nextLine();
                 if(PERUSMAKSU_PATTERN.asPredicate().test(line)) {
@@ -99,28 +95,22 @@ public class Parser {
                         var eurPerKwh = Double.parseDouble(matcher.group(4)
                                 .replace(",", ".")) / 100.0;
 
+                        var nightSiirto = nightSiirtoKwh.getOrDefault(month,0);
+                        var daySriirto = daySiirtoKwh.getOrDefault(month,0);
                         periods.computeIfAbsent(month, s -> new Period());
                         periods.computeIfPresent(month, (s,p) -> {
-                            p.dayEnergy = totalEnergy - nightSiirtoKwh;
+                            p.dayEnergy = totalEnergy - nightSiirto;
                             p.dayEnergyEur = p.dayEnergy * eurPerKwh;
-                            p.nightEnergy = totalEnergy - daySiirtoKwh;
+                            p.nightEnergy = totalEnergy - daySriirto;
                             p.nightEnergyEur = p.nightEnergy * eurPerKwh;
                             return p;
                         });
                     }
                 }
             }
-
-            periods.forEach((month,period ) -> {
-                var csv = String.format("%s,%.02f,,%d,%.02f,%d,%.02f,,,,", month, period.basicPay,
-                        period.dayEnergy, period.dayEnergyEur,period.nightEnergy, period.nightEnergyEur);
-                System.out.println(csv);
-            });
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            return periods;
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }

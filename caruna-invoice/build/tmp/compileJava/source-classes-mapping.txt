@@ -1,2 +1,0 @@
-com/devsoap/parsers/caruna/Parser.java
- com.devsoap.parsers.caruna.Parser

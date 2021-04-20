@@ -1,0 +1,6 @@
+dependencies {
+    implementation project(':caruna-invoice')
+    implementation project(':helen-invoice')
+}
+
+application.mainClass='com.devsoap.parsers.composites.CarunaHelenParser'

@@ -1,19 +1,17 @@
-package com.devsoap.parsers.helen;
+package com.devsoap.parsers.caruna;
 
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.format.TextStyle;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class Parser {
@@ -29,78 +27,81 @@ public class Parser {
             .ofLocalizedDate(FormatStyle.SHORT)
             .withLocale(FI_LOCALE);
 
+    public static class Period {
+        public double basicPay = 0.0;
+        public double transferDayPrice = 0.0;
+        public double transferDayTotal = 0.0;
+        public int transferDayKwh = 0;
+        public double transferNightPrice = 0.0;
+        public double transferNightTotal = 0.0;
+        public int transferNightKwh = 0;
+        public double tax = 0.0;
+    }
+
     public static void main(String[] args) {
         var filename = args[0];
         var file = Paths.get(filename);
+
+        System.out.println("Kuukausi,Perusmaksu (energia),Perusmaksu (siirto),Päiväenergia (kWh),Päiväenergia " +
+                "(EUR),Yöenergia (kWh),Yöenergia (EUR),Päiväsiirto (kWh),Päiväsiirto (EUR),Yösiirto (kWh)" +
+                ",Yösiirto (EUR),Vero");
+
+        parse(file).forEach((n,p) -> {
+            var csv = String.format("%s,,%.02f,,,,,%d, %.02f,%d, %.02f, %.02f",
+                    n, p.basicPay, p.transferDayKwh, p.transferDayTotal, p.transferNightKwh, p.transferNightTotal, p.tax);
+            System.out.println(csv);
+        });
+    }
+
+    public static Map<String, Period> parse(Path file) {
         try(var reader = new PdfReader(file.toFile())) {
             var document = new PdfDocument(reader);
             var page2 = document.getPage(2);
             var text = PdfTextExtractor.getTextFromPage(page2);
-
             var scanner = new Scanner(text);
-            var month = "";
-            var basicPay = 0.0;
-            var transferDayPrice = 0.0;
-            var transferDayTotal = 0.0;
-            var transforDayKwh = 0L;
-            var transferNightPrice = 0.0;
-            var transferNightTotal = 0.0;
-            var transforNightKwh = 0L;
-            var tax = 0.0;
+            var periods = new HashMap<String, Period>();
 
-            System.out.println("Kuukausi,Perusmaksu (energia),Perusmaksu (siirto),Päiväenergia (kWh),Päiväenergia " +
-                    "(EUR),Yöenergia (kWh),Yöenergia (EUR),Päiväsiirto (kWh),Päiväsiirto (EUR),Yösiirto (kWh)" +
-                    ",Yösiirto (EUR),Vero");
-
+            Period currentPeriod = null;
             while(scanner.hasNextLine()) {
                 var line = scanner.nextLine();
                 if(DATE_RANGE_PATTERN.asPredicate().test(line)) {
-                    if(!Objects.equals(month, "")) {
-                        var csv = String.format("%s,,%.02f,,,,,%d, %.02f,%d, %.02f, %.02f",
-                                month, basicPay, transforDayKwh, transferDayTotal, transforNightKwh, transferNightTotal, tax);
-                        System.out.println(csv);
-                    }
-
                     var matcher = DATE_RANGE_PATTERN.matcher(line);
                     while(matcher.find()) {
-                        month = LocalDate.from( FI_DATE.parse(matcher.group(1)))
+                        var month = LocalDate.from( FI_DATE.parse(matcher.group(1)))
                                 .getMonth()
                                 .getDisplayName(TextStyle.FULL, new Locale("FI","fi"));
                         month = month.substring(0,1).toUpperCase() + month.substring(1, month.length()-2);
+                        currentPeriod = periods.computeIfAbsent(month, s -> new Period());
                     }
                 } else if(PERUSMAKSU_PATTERN.asPredicate().test(line)) {
                     var matcher = PERUSMAKSU_PATTERN.matcher(line);
                     while (matcher.find()) {
-                        basicPay = Double.parseDouble(matcher.group(1).replace(",", "."));
+                        currentPeriod.basicPay = Double.parseDouble(matcher.group(1).replace(",", "."));
                     }
                 } else if(P_SIIRTO_PATTERN.asPredicate().test(line)) {
                     var matcher = P_SIIRTO_PATTERN.matcher(line);
                     while (matcher.find()) {
-                        transferDayPrice = Double.parseDouble(matcher.group(1).replace(",", ".")) / 100.0;
-                        transferDayTotal = Double.parseDouble(matcher.group(2).replace(",", "."));
-                        transforDayKwh = Math.round(transferDayTotal / transferDayPrice);
+                        currentPeriod.transferDayPrice = Double.parseDouble(matcher.group(1).replace(",", ".")) / 100.0;
+                        currentPeriod.transferDayTotal = Double.parseDouble(matcher.group(2).replace(",", "."));
+                        currentPeriod.transferDayKwh = (int) Math.round(currentPeriod.transferDayTotal / currentPeriod.transferDayPrice);
                     }
                 } else if(O_SIIRTO_PATTERN.asPredicate().test(line)) {
                     var matcher = O_SIIRTO_PATTERN.matcher(line);
                     while (matcher.find()) {
-                        transferNightPrice = Double.parseDouble(matcher.group(1).replace(",", ".")) / 100.0;
-                        transferNightTotal = Double.parseDouble(matcher.group(2).replace(",", "."));
-                        transforNightKwh = Math.round(transferNightTotal / transferNightPrice);
+                        currentPeriod.transferNightPrice = Double.parseDouble(matcher.group(1).replace(",", ".")) / 100.0;
+                        currentPeriod.transferNightTotal = Double.parseDouble(matcher.group(2).replace(",", "."));
+                        currentPeriod.transferNightKwh = (int) Math.round(currentPeriod.transferNightTotal / currentPeriod.transferNightPrice);
                     }
                 } else if(TAX_PATTERN.asPredicate().test(line)) {
                     var matcher = TAX_PATTERN.matcher(line);
                     while (matcher.find()) {
-                        tax = Double.parseDouble(matcher.group(1).replace(",", "."));
+                        currentPeriod.tax = Double.parseDouble(matcher.group(1).replace(",", "."));
                     }
                 }
             }
-            var csv = String.format("%s,,%.02f,,,,,%d, %.02f,%d, %.02f, %.02f",
-                    month, basicPay, transforDayKwh, transferDayTotal, transforNightKwh, transferNightTotal, tax);
-            System.out.println(csv);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            return periods;
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }

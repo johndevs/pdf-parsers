@@ -1,4 +1,5 @@
 rootProject.name = 'pdf-parsers'
 include 'caruna-invoice'
 include 'helen-invoice'
+include 'composite-parsers'
 
