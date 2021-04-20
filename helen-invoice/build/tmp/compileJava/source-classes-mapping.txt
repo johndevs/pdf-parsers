@@ -1,0 +1,3 @@
+com/devsoap/parsers/helen/Parser.java
+ com.devsoap.parsers.helen.Parser
+ com.devsoap.parsers.helen.Parser$Period

@@ -1,25 +1,19 @@
-package com.devsoap.parsers.caruna;
+package com.devsoap.parsers.helen;
 
 import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.format.TextStyle;
-import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Scanner;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Parser {
