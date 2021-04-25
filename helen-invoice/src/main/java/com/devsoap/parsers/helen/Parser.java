@@ -35,6 +35,17 @@ public class Parser {
         public int nightEnergy = 0;
         public double dayEnergyEur = 0.0;
         public double nightEnergyEur = 0.0;
+
+        @Override
+        public String toString() {
+            return "Period{" +
+                    "basicPay=" + basicPay +
+                    ", dayEnergy=" + dayEnergy +
+                    ", nightEnergy=" + nightEnergy +
+                    ", dayEnergyEur=" + dayEnergyEur +
+                    ", nightEnergyEur=" + nightEnergyEur +
+                    '}';
+        }
     }
 
     public static void main(String[] args) {
@@ -54,7 +65,7 @@ public class Parser {
 
         parse(filename,daySiirtoKwh, nightSiirtoKwh).forEach((month,period ) -> {
             var csv = String.format("%s,%.02f,,%d,%.02f,%d,%.02f,,,,", month,
-                    period.dayEnergy, period.dayEnergyEur,period.nightEnergy, period.nightEnergyEur);
+                    period.basicPay, period.dayEnergy, period.dayEnergyEur,period.nightEnergy, period.nightEnergyEur);
             System.out.println(csv);
         });
     }
@@ -67,21 +78,13 @@ public class Parser {
             var text = PdfTextExtractor.getTextFromPage(page2);
             var scanner = new Scanner(text);
             var periods = new HashMap<String, Period>();
+            var basicPay = 0.0;
             while(scanner.hasNextLine()) {
                 var line = scanner.nextLine();
                 if(PERUSMAKSU_PATTERN.asPredicate().test(line)) {
                     var matcher = PERUSMAKSU_PATTERN.matcher(line);
                     while (matcher.find()) {
-                         var month = LocalDate.from( FI_DATE.parse(matcher.group(1)))
-                                .getMonth().getDisplayName(TextStyle.FULL, new Locale("FI","fi"));
-                         month = month.substring(0,1).toUpperCase() + month.substring(1, month.length()-2);
-                         var  basicPay = Double.parseDouble(matcher.group(3).replace(",", "."));
-
-                         periods.computeIfAbsent(month, s -> new Period());
-                         periods.computeIfPresent(month, (s,p) -> {
-                             p.basicPay =basicPay;
-                             return p;
-                         });
+                         basicPay = Double.parseDouble(matcher.group(3).replace(",", "."));
                     }
                 } else if(ENERGIA_PATTERN.asPredicate().test(line)) {
                     var matcher = ENERGIA_PATTERN.matcher(line);
@@ -108,6 +111,12 @@ public class Parser {
                     }
                 }
             }
+
+            var totalBasicPay = basicPay;
+            periods.forEach((month, period) -> {
+                period.basicPay = totalBasicPay / periods.size();
+            });
+
             return periods;
         } catch (IOException e) {
             throw new RuntimeException(e);
