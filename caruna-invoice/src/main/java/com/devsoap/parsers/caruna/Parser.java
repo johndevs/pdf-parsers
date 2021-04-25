@@ -36,6 +36,20 @@ public class Parser {
         public double transferNightTotal = 0.0;
         public int transferNightKwh = 0;
         public double tax = 0.0;
+
+        @Override
+        public String toString() {
+            return "Period{" +
+                    "basicPay=" + basicPay +
+                    ", transferDayPrice=" + transferDayPrice +
+                    ", transferDayTotal=" + transferDayTotal +
+                    ", transferDayKwh=" + transferDayKwh +
+                    ", transferNightPrice=" + transferNightPrice +
+                    ", transferNightTotal=" + transferNightTotal +
+                    ", transferNightKwh=" + transferNightKwh +
+                    ", tax=" + tax +
+                    '}';
+        }
     }
 
     public static void main(String[] args) {

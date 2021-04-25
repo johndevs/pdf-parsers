@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 public class CarunaHelenParser {
 
     public static void main(String[] args) {
-        var carunaFile = Path.of("/home/john/Downloads/caruna-lasku.pdf");
-        var helenFile = Path.of("/home/john/Downloads/helen-lasku.pdf");
+        var carunaFile = Path.of(args[0]);
+        var helenFile = Path.of(args[1]);
 
         var carunaPeriods = com.devsoap.parsers.caruna.Parser.parse(carunaFile);
         var nightSiirto = carunaPeriods.entrySet().stream()
