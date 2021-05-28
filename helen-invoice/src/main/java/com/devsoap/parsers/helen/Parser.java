@@ -35,17 +35,6 @@ public class Parser {
         public int nightEnergy = 0;
         public double dayEnergyEur = 0.0;
         public double nightEnergyEur = 0.0;
-
-        @Override
-        public String toString() {
-            return "Period{" +
-                    "basicPay=" + basicPay +
-                    ", dayEnergy=" + dayEnergy +
-                    ", nightEnergy=" + nightEnergy +
-                    ", dayEnergyEur=" + dayEnergyEur +
-                    ", nightEnergyEur=" + nightEnergyEur +
-                    '}';
-        }
     }
 
     public static void main(String[] args) {

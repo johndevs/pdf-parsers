@@ -1,7 +1,6 @@
 package com.devsoap.parsers.composites;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
