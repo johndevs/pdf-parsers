@@ -18,4 +18,5 @@ include 'caruna-invoice'
 include 'helen-invoice'
 include 'composite-parsers'
 include 'plugsurfing-invoice'
+include 'rest-api'
 
