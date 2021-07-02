@@ -1,5 +1,6 @@
 package com.devsoap.parsers.api;
 
+import com.devsoap.parsers.caruna.CarunaParser;
 import com.devsoap.parsers.composites.CarunaHelenParser;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -37,23 +38,37 @@ public class Api {
         app.routes(() -> {
             get(ctx -> { ctx.result("PDF Parsers REST API"); });
             path("parsers", () -> {
+
+                path(CarunaParser.class.getSimpleName(), () -> {
+                    get(ctx -> ctx.render(renderParserStaticPage(CarunaParser.class, "upload.html")));
+                    post(ctx -> {
+                       withUploadedFile(ctx.uploadedFiles().get(0), carunaFile -> {
+                           renderParserOutput(ctx, result -> CarunaParser.run(carunaFile, result), "caruna-report.csv");
+                       });
+                    });
+                });
+
                 path(CarunaHelenParser.class.getSimpleName(), () -> {
                     get(ctx -> ctx.render(renderParserStaticPage(CarunaHelenParser.class, "upload.html")));
                     post(ctx -> {
                         withUploadedFile(ctx.uploadedFiles().get(1), carunaFile -> {
                             withUploadedFile(ctx.uploadedFiles().get(0), helenFile -> {
-                                var resultStream = new ByteArrayOutputStream();
-                                try (var result = new PrintStream(resultStream)) {
-                                    CarunaHelenParser.run(carunaFile, helenFile, result);
-                                }
-                                renderReport(ctx, new ByteArrayInputStream(resultStream.toByteArray()),
-                                        "caruna-helen-report.csv");
+                                renderParserOutput(ctx, result ->
+                                        CarunaHelenParser.run(carunaFile, helenFile, result), "caruna-helen-report.csv");
                             });
                         });
                     });
                 });
             });
         });
+    }
+
+    private static void renderParserOutput(Context ctx, Consumer<PrintStream> parserCommand, String filename) {
+        var resultStream = new ByteArrayOutputStream();
+        try (var result = new PrintStream(resultStream)) {
+            parserCommand.accept(result);
+        }
+        renderReport(ctx, new ByteArrayInputStream(resultStream.toByteArray()), filename);
     }
 
     private static void withUploadedFile(UploadedFile fileUpload, Consumer<Path> processor) {

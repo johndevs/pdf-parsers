@@ -1,5 +1,7 @@
 package com.devsoap.parsers.composites;
 
+import com.devsoap.parsers.caruna.CarunaParser;
+
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -15,7 +17,7 @@ public class CarunaHelenParser {
     }
 
     public static void run(Path carunaFile, Path helenFile, PrintStream result) {
-        var carunaPeriods = com.devsoap.parsers.caruna.Parser.parse(carunaFile);
+        var carunaPeriods = CarunaParser.parse(carunaFile);
         var nightSiirto = carunaPeriods.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().transferNightKwh));
         var daySiirto = carunaPeriods.entrySet().stream()
@@ -30,7 +32,7 @@ public class CarunaHelenParser {
         months.addAll(helenPeriods.keySet());
         months.forEach(month -> {
             var hp = helenPeriods.getOrDefault(month, new com.devsoap.parsers.helen.Parser.Period());
-            var cp = carunaPeriods.getOrDefault(month, new com.devsoap.parsers.caruna.Parser.Period());
+            var cp = carunaPeriods.getOrDefault(month, new CarunaParser.Period());
 
             var csv = String.format("%s,%.02f,%.02f,%d,%.02f,%d,%.02f,%d,%.02f,%d,%.02f,%.02f",
                     month, hp.basicPay, cp.basicPay, hp.dayEnergy, hp.dayEnergyEur, hp.nightEnergy,

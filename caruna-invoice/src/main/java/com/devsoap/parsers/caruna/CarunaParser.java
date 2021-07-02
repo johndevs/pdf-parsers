@@ -5,6 +5,7 @@ import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -14,7 +15,7 @@ import java.time.format.TextStyle;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class Parser {
+public class CarunaParser {
 
     private static final Pattern DATE_RANGE_PATTERN = Pattern.compile("(\\d\\d?\\.\\d\\d?\\.\\d\\d\\d\\d) - (\\d\\d?\\.\\d\\d?\\.\\d\\d\\d\\d)");
     private static final Pattern PERUSMAKSU_PATTERN = Pattern.compile("Perusmaksu.* (\\d*,\\d\\d) (EUR|€)");
@@ -55,15 +56,18 @@ public class Parser {
     public static void main(String[] args) {
         var filename = args[0];
         var file = Paths.get(filename);
+        run(file, System.out);
+    }
 
-        System.out.println("Kuukausi,Perusmaksu (energia),Perusmaksu (siirto),Päiväenergia (kWh),Päiväenergia " +
+    public static void run(Path carunaFile, PrintStream result) {
+        result.println("Kuukausi,Perusmaksu (energia),Perusmaksu (siirto),Päiväenergia (kWh),Päiväenergia " +
                 "(EUR),Yöenergia (kWh),Yöenergia (EUR),Päiväsiirto (kWh),Päiväsiirto (EUR),Yösiirto (kWh)" +
                 ",Yösiirto (EUR),Vero");
 
-        parse(file).forEach((n,p) -> {
+        parse(carunaFile).forEach((n,p) -> {
             var csv = String.format("%s,,%.02f,,,,,%d, %.02f,%d, %.02f, %.02f",
                     n, p.basicPay, p.transferDayKwh, p.transferDayTotal, p.transferNightKwh, p.transferNightTotal, p.tax);
-            System.out.println(csv);
+            result.println(csv);
         });
     }
 
