@@ -1,6 +1,7 @@
 package com.devsoap.parsers.composites;
 
 import com.devsoap.parsers.caruna.CarunaParser;
+import com.devsoap.parsers.helen.HelenParser;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -22,7 +23,7 @@ public class CarunaHelenParser {
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().transferNightKwh));
         var daySiirto = carunaPeriods.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().transferDayKwh));
-        var helenPeriods = com.devsoap.parsers.helen.Parser.parse(helenFile, daySiirto, nightSiirto);
+        var helenPeriods = HelenParser.parse(helenFile, daySiirto, nightSiirto);
 
         result.println("Kuukausi,Perusmaksu (energia),Perusmaksu (siirto),Päiväenergia (kWh),Päiväenergia " +
                 "(EUR),Yöenergia (kWh),Yöenergia (EUR),Päiväsiirto (kWh),Päiväsiirto (EUR),Yösiirto (kWh)" +
@@ -31,7 +32,7 @@ public class CarunaHelenParser {
         var months = new HashSet<>(carunaPeriods.keySet());
         months.addAll(helenPeriods.keySet());
         months.forEach(month -> {
-            var hp = helenPeriods.getOrDefault(month, new com.devsoap.parsers.helen.Parser.Period());
+            var hp = helenPeriods.getOrDefault(month, new HelenParser.Period());
             var cp = carunaPeriods.getOrDefault(month, new CarunaParser.Period());
 
             var csv = String.format("%s,%.02f,%.02f,%d,%.02f,%d,%.02f,%d,%.02f,%d,%.02f,%.02f",

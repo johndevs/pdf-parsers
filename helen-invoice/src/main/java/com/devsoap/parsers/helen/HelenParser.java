@@ -4,10 +4,9 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -16,7 +15,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class Parser {
+public class HelenParser {
 
     private static final Pattern PERUSMAKSU_PATTERN = Pattern.compile(
             "perusmaksu (\\d\\d?\\.\\d\\d?\\.\\d\\d\\d\\d)-(\\d\\d?\\.\\d\\d?\\.\\d\\d\\d\\d).* (\\d*,\\d\\d) e");
@@ -39,23 +38,30 @@ public class Parser {
 
     public static void main(String[] args) {
         var filename = Path.of(args[0]);
+        var daySiirtoPeriods = args[1];
+        var nightSiirtoPeriods = args[2];
+        run(filename, daySiirtoPeriods, nightSiirtoPeriods, System.out);
+    }
+
+    public static void run(Path helenFile, String daySiirtoKwhPeriods, String nightSiirtoKwhPeriods,
+                           PrintStream result) {
         var daySiirtoKwh = Arrays
-                .stream(args[1].split(","))
+                .stream(daySiirtoKwhPeriods.split(","))
                 .map(period -> period.split(":"))
                 .collect(Collectors.toMap(values -> values[0], values -> Integer.parseInt(values[1])));
         var nightSiirtoKwh = Arrays
-                .stream(args[2].split(","))
+                .stream(nightSiirtoKwhPeriods.split(","))
                 .map(period -> period.split(":"))
                 .collect(Collectors.toMap(values -> values[0], values -> Integer.parseInt(values[1])));
 
-        System.out.println("Kuukausi,Perusmaksu (energia),Perusmaksu (siirto),Päiväenergia (kWh),Päiväenergia " +
+        result.println("Kuukausi,Perusmaksu (energia),Perusmaksu (siirto),Päiväenergia (kWh),Päiväenergia " +
                 "(EUR),Yöenergia (kWh),Yöenergia (EUR),Päiväsiirto (kWh),Päiväsiirto (EUR),Yösiirto (kWh)" +
                 ",Yösiirto (EUR),Vero");
 
-        parse(filename,daySiirtoKwh, nightSiirtoKwh).forEach((month,period ) -> {
+        parse(helenFile,daySiirtoKwh, nightSiirtoKwh).forEach((month,period ) -> {
             var csv = String.format("%s,%.02f,,%d,%.02f,%d,%.02f,,,,", month,
                     period.basicPay, period.dayEnergy, period.dayEnergyEur,period.nightEnergy, period.nightEnergyEur);
-            System.out.println(csv);
+            result.println(csv);
         });
     }
 

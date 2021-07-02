@@ -3,6 +3,7 @@ dependencies {
     implementation "org.thymeleaf:thymeleaf:3.0.11.RELEASE"
 
     implementation project(':caruna-invoice')
+    implementation project(':helen-invoice')
     implementation project(':composite-parsers')
 
     implementation 'org.apache.logging.log4j:log4j-core:2.11.0'

@@ -2,6 +2,7 @@ package com.devsoap.parsers.api;
 
 import com.devsoap.parsers.caruna.CarunaParser;
 import com.devsoap.parsers.composites.CarunaHelenParser;
+import com.devsoap.parsers.helen.HelenParser;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
@@ -43,8 +44,20 @@ public class Api {
                     get(ctx -> ctx.render(renderParserStaticPage(CarunaParser.class, "upload.html")));
                     post(ctx -> {
                        withUploadedFile(ctx.uploadedFiles().get(0), carunaFile -> {
-                           renderParserOutput(ctx, result -> CarunaParser.run(carunaFile, result), "caruna-report.csv");
+                           renderParserOutput(ctx, result -> CarunaParser
+                                   .run(carunaFile, result), "caruna-report.csv");
                        });
+                    });
+                });
+
+                path(HelenParser.class.getSimpleName(), () -> {
+                    get(ctx -> ctx.render(renderParserStaticPage(HelenParser.class, "upload.html")));
+                    post(ctx -> {
+                        withUploadedFile(ctx.uploadedFiles().get(0), helenFile -> {
+                            renderParserOutput(ctx, result -> HelenParser
+                                    .run(helenFile, ctx.formParam("dayKwh"), ctx.formParam("nightKwh"), result)
+                            , "caruna-report.csv");
+                        });
                     });
                 });
 
@@ -59,6 +72,8 @@ public class Api {
                         });
                     });
                 });
+
+
             });
         });
     }
