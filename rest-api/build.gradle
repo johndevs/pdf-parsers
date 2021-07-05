@@ -1,3 +1,7 @@
+plugins {
+    id 'com.google.cloud.tools.jib'
+}
+
 dependencies {
     implementation 'io.javalin:javalin:3.13.8'
     implementation "org.thymeleaf:thymeleaf:3.0.11.RELEASE"
@@ -12,3 +16,21 @@ dependencies {
 }
 
 application.mainClass='com.devsoap.parsers.api.Api'
+
+jib {
+    from {
+        image = "openjdk:$targetCompatibility"
+    }
+    to {
+        def registry = findProperty('DOCKER_REGISTRY')
+        image = "${registry ? registry + '/' : ''}${project.group}/${rootProject.name}"
+        tags = [version, 'latest']
+    }
+    container {
+        mainClass = "com.devsoap.parsers.api.Api"
+        jvmFlags = []
+        ports = ['7000']
+        volumes = []
+        environment = [:]
+    }
+}

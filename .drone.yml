@@ -1,0 +1,64 @@
+kind: pipeline
+name: default
+type: docker
+
+steps:
+  - name: restore-cache
+    image: drillster/drone-volume-cache
+    settings:
+      restore: true
+      mount:
+        - /drone/src/.gradle-cache
+    volumes:
+      - name: cache
+        path: /cache
+
+  - name: build
+    image: openjdk:16
+    commands:
+      - ./gradlew --no-daemon --build-cache clean assemble
+    environment:
+      GRADLE_USER_HOME: /drone/src/.gradle-cache
+      ORG_GRADLE_PROJECT_BUILD_VERSION: ${DRONE_TAG}
+
+  - name: deploy
+    image: openjdk:16
+    commands:
+      - ./gradlew --no-daemon --info --build-cache jib
+    settings:
+      use_cache: true
+    environment:
+      GRADLE_USER_HOME: /drone/src/.gradle-cache
+      ORG_GRADLE_PROJECT_DOCKER_REGISTRY:
+        from_secret: DOCKER_REPO
+      ORG_GRADLE_PROJECT_BUILD_VERSION: ${DRONE_TAG}
+
+  - name: rebuild-cache
+    image: drillster/drone-volume-cache
+    settings:
+      rebuild: true
+      mount:
+        - /drone/src/.gradle-cache
+    volumes:
+      - name: cache
+        path: /cache
+
+trigger:
+  ref:
+    include:
+      - refs/tags/**
+
+services:
+  - name: docker
+    image: docker:dind
+    privileged: true
+    volumes:
+      - name: dockersock
+        path: /var/run
+
+volumes:
+  - name: dockersock
+    temp: {}
+  - name: cache
+    host:
+      path: /tmp/hits-drone-cache
