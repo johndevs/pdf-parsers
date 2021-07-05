@@ -5,6 +5,7 @@ dependencies {
     implementation project(':caruna-invoice')
     implementation project(':helen-invoice')
     implementation project(':composite-parsers')
+    implementation project(':plugsurfing-invoice')
 
     implementation 'org.apache.logging.log4j:log4j-core:2.11.0'
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.11.0'

@@ -5,6 +5,7 @@ import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
@@ -16,7 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class Parser {
+public class PlugSurfingParser {
 
     private static final Pattern DATE_TIME_KWH_DURATION_PATTERN = Pattern.compile("(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}) \\((.*), (.*)kWh\\)");
     private static final Pattern QUANTITY_PATTERN = Pattern.compile("(\\d+) (\\d+,\\d+) (\\d+)% (\\d+,\\d+) €");
@@ -30,8 +31,12 @@ public class Parser {
     public static void main(String[] args) {
         var filename = args[0];
         var file = Paths.get(filename);
-        System.out.println("Vuosi,Kuukausi,Latauksia,Perusmaksu(€),Total(€),Energia(kwh)");
-        parse(file).forEach((month, sessions) -> System.out.println(sessions.stream()
+        run(file, System.out);
+    }
+
+    public static void run(Path file, PrintStream result) {
+        result.println("Vuosi,Kuukausi,Latauksia,Perusmaksu(€),Total(€),Energia(kwh)");
+        parse(file).forEach((month, sessions) -> result.println(sessions.stream()
             .reduce(Session::add)
             .map(session -> String.format("%s,%s,%d,%.02f,%.02f,%.02f",
                 month.split("-")[0], month.split("-")[1],

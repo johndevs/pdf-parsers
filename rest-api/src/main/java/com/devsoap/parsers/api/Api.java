@@ -3,6 +3,7 @@ package com.devsoap.parsers.api;
 import com.devsoap.parsers.caruna.CarunaParser;
 import com.devsoap.parsers.composites.CarunaHelenParser;
 import com.devsoap.parsers.helen.HelenParser;
+import com.devsoap.parsers.plugsurfing.PlugSurfingParser;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
@@ -73,6 +74,15 @@ public class Api {
                     });
                 });
 
+                path(PlugSurfingParser.class.getSimpleName(), () -> {
+                    get(ctx -> ctx.render(renderParserStaticPage(PlugSurfingParser.class, "upload.html")));
+                    post(ctx -> {
+                        withUploadedFile(ctx.uploadedFiles().get(0), plugFile -> {
+                            renderParserOutput(ctx, result -> PlugSurfingParser
+                                    .run(plugFile, result), "plugsurfing-report.csv");
+                        });
+                    });
+                });
 
             });
         });
