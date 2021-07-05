@@ -43,6 +43,55 @@ steps:
       - name: cache
         path: /cache
 
+  - name: prepare-infra
+    image: drone/git
+    commands:
+      - git clone --depth=1 https://$${GITHUB_USERNAME}:$${GITHUB_PUSH_TOKEN}@github.com/devsoap/infrastructure.git infra
+      - cd infra
+      - sed -i -r "s|$${IMAGE}:(.*?)|$${IMAGE}:$${TAG}|g" $${STACK}/docker-compose.yml
+      - git diff -U0
+    environment:
+      STACK: ahlroos.me
+      IMAGE: com.devsoap/pdf-parsers
+      TAG: ${DRONE_TAG}
+      GITHUB_USERNAME:
+        from_secret: GITHUB_USERNAME
+      GITHUB_PUSH_TOKEN:
+        from_secret: GITHUB_PUSH_TOKEN
+
+    - name: publish-to-production
+      image: fabn/rancher-cli
+      commands:
+        - cd infra/$${STACK}
+        - echo "key:${RANCHER_ACCESS_KEY}"
+        - echo "secret:${RANCHER_SECRET_KEY}"
+        - rancher up -d -c --upgrade $${SERVICE}
+      environment:
+        STACK: ahlroos.me
+        SERVICE: pdf-parsers
+        RANCHER_URL:
+          from_secret: RANCHER_URL
+        RANCHER_ACCESS_KEY:
+          from_secret: RANCHER_ACCESS_KEY
+        RANCHER_SECRET_KEY:
+          from_secret: RANCHER_SECRET_KEY
+
+    - name: save-infra
+      image: drone/git
+      commands:
+        - cd infra
+        - git diff -U0
+        - git commit -am "Updated $${STACK}/$${SERVICE} to $${TAG}"
+        - git push origin master
+      environment:
+        SERVICE: pdf-parsers
+        STACK: ahlroos.me
+        TAG: ${DRONE_TAG}
+        GITHUB_USERNAME:
+          from_secret: GITHUB_USERNAME
+        GITHUB_PUSH_TOKEN:
+          from_secret: GITHUB_PUSH_TOKEN
+
 trigger:
   ref:
     include:
