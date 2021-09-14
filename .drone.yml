@@ -27,6 +27,9 @@ steps:
       - ./gradlew --no-daemon --info --build-cache jib
     settings:
       use_cache: true
+    volumes:
+      - name: docker_config
+        path: /root/.docker/config.json
     environment:
       GRADLE_USER_HOME: /drone/src/.gradle-cache
       ORG_GRADLE_PROJECT_DOCKER_REGISTRY:
@@ -59,40 +62,43 @@ steps:
       GITHUB_PUSH_TOKEN:
         from_secret: GITHUB_PUSH_TOKEN
 
-    - name: publish-to-production
-      image: fabn/rancher-cli
-      commands:
-        - cd infra/$${STACK}
-        - echo "key:${RANCHER_ACCESS_KEY}"
-        - echo "secret:${RANCHER_SECRET_KEY}"
-        - rancher up -d -c --upgrade $${SERVICE}
-      environment:
-        STACK: ahlroos.me
-        SERVICE: pdf-parsers
-        RANCHER_URL:
-          from_secret: RANCHER_URL
-        RANCHER_ACCESS_KEY:
-          from_secret: RANCHER_ACCESS_KEY
-        RANCHER_SECRET_KEY:
-          from_secret: RANCHER_SECRET_KEY
+  - name: publish-to-production
+    image: maniack/drone-portainer
+    settings:
+      portainer:
+        from_secret: PORTAINER_URL
+      username:
+        from_secret: PORTAINER_USER
+      password:
+        from_secret: PORTAINER_PASSWORD
+      endpoint: ahlroos.me
+      stack: ahlroos_me
+      file: infra/ahlroos.me/docker-compose.yml
+    environment:
+      DEBUG: true
 
-    - name: save-infra
-      image: drone/git
-      commands:
-        - cd infra
-        - git diff -U0
-        - git commit -am "Updated $${STACK}/$${SERVICE} to $${TAG}"
-        - git push origin master
-      environment:
-        SERVICE: pdf-parsers
-        STACK: ahlroos.me
-        TAG: ${DRONE_TAG}
-        GITHUB_USERNAME:
-          from_secret: GITHUB_USERNAME
-        GITHUB_PUSH_TOKEN:
-          from_secret: GITHUB_PUSH_TOKEN
+  - name: save-infra
+    image: drone/git
+    commands:
+      - cd infra
+      - git diff -U0
+      - git commit -am "Updated $${STACK}/$${SERVICE} to $${TAG}"
+      - git push origin master
+    environment:
+      SERVICE: pdf-parsers
+      STACK: ahlroos.me
+      TAG: ${DRONE_TAG}
+      GITHUB_USERNAME:
+        from_secret: GITHUB_USERNAME
+      GITHUB_PUSH_TOKEN:
+        from_secret: GITHUB_PUSH_TOKEN
 
 trigger:
   ref:
     include:
       - refs/tags/**
+
+volumes:
+  - name: docker_config
+    host:
+      path: /root/.docker/config.json
